@@ -1,0 +1,38 @@
+# Local stack that mirrors production topology: API replicas, Postgres, MCP server as its own service.
+#   docker compose up --build
+#   docker compose up --build --scale api=2   # prove statelessness (put a proxy in front)
+
+services:
+  postgres:
+    image: postgres:17
+    environment:
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: app
+      POSTGRES_DB: app
+    ports: ["5432:5432"]
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U app"]
+      interval: 3s
+      retries: 10
+
+  mcp-customer:
+    build: .
+    command: ["python", "mcp_servers/customer_server.py"]
+    ports: ["8001:8001"]
+
+  api:
+    build: .
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      DATABASE_URL: postgresql://app:app@postgres:5432/app
+      MCP_CONFIG_PATH: config/mcp.docker.json
+    ports: ["8000:8000"]
+    depends_on:
+      postgres: { condition: service_healthy }
+      mcp-customer: { condition: service_started }
+
+volumes:
+  pgdata:

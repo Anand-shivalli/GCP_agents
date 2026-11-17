@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "customer-records": {
+      "url": "http://localhost:8001/mcp",
+      "transport": "http"
+    }
+  }
+}

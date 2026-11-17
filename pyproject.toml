@@ -1,0 +1,55 @@
+[project]
+name = "langgraph-starter"
+version = "0.1.0"
+description = "Reference template: orchestrator -> supervisor -> MCP tool agent on LangGraph, with persistent state and standard middleware"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    # --- Orchestration -------------------------------------------------------
+    "langgraph>=1.2,<2",                      # StateGraph, checkpoints, interrupts
+    "langchain[mcp]>=1.5,<2",                 # create_agent + built-in middleware + langchain.mcp (FastMCP)
+    "langchain-openai>=1.8,<2",               # provider package; swap/add others (langchain-anthropic, ...)
+    # --- Persistence -----------------------------------------------------------
+    "langgraph-checkpoint-postgres>=3.2,<4",  # AsyncPostgresSaver
+    "psycopg[binary,pool]>=3.2",
+    "pycryptodome>=3.20",                     # EncryptedSerializer for checkpoints at rest
+    # --- PII / PHI detection ----------------------------------------------------
+    "presidio-analyzer>=2.2",
+    # --- API ---------------------------------------------------------------------
+    "fastapi>=0.160",
+    "uvicorn[standard]>=0.30",
+    "pydantic-settings>=2.6",
+    # --- Observability -------------------------------------------------------------
+    "langsmith>=0.14",                        # LangSmith native tracing (optional, env-driven)
+    "opentelemetry-sdk>=1.45",
+    "opentelemetry-exporter-otlp-proto-http>=1.45",
+    "opentelemetry-instrumentation-fastapi>=0.66b0",
+    "opentelemetry-instrumentation-psycopg>=0.66b0",
+    "opentelemetry-instrumentation-httpx>=0.66b0",
+    "opentelemetry-instrumentation-logging>=0.66b0",
+    "openinference-instrumentation-langchain>=0.1.87,<0.2",  # LangChain/LangGraph -> OTel spans
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "pytest-asyncio>=0.24", "httpx>=0.27", "ruff>=0.8"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/app"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src", "."]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+filterwarnings = ["ignore::langchain_core._api.LangChainBetaWarning"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "ASYNC"]
